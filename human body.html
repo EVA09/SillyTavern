@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tactical Status: A-Pose</title>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --panel-bg: rgba(20, 24, 30, 0.85);
+            --text-color: #8a9bb8;
+            --highlight: #00d1ff;
+            --danger: #ff2a2a;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 209, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 209, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        .hud-container {
+            position: relative;
+            margin-top: 30px;
+            width: 360px; /* 稍微加宽以容纳张开的手臂 */
+            height: 460px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(0, 209, 255, 0.15);
+            background: radial-gradient(circle, rgba(0, 30, 40, 0.2) 0%, rgba(0,0,0,0.7) 100%);
+            border-radius: 30px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+        }
+
+        /* 四角装饰标记 */
+        .corner-mark {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--highlight);
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+        .tl { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+        .tr { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
+        .bl { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
+        .br { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+
+        #body-svg {
+            height: 380px;
+            width: 100%;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.8));
+        }
+
+        .body-part {
+            fill: #1b2026; 
+            stroke: #3e4c5e;
+            stroke-width: 5; 
+            stroke-linecap: round; 
+            stroke-linejoin: round;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            transform-origin: center center;
+        }
+
+        .body-part:hover {
+            stroke: var(--highlight);
+            stroke-width: 6;
+            filter: brightness(1.2);
+        }
+
+        .controls {
+            margin-top: 20px;
+            background: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 400px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 11px;
+            color: #6fa1c7;
+        }
+
+        .control-group label { width: 45px; text-transform: uppercase; font-weight: bold;}
+
+        .control-group input[type="range"] {
+            flex: 1;
+            margin: 0 8px;
+            background: #222;
+            -webkit-appearance: none;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--text-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--highlight);
+            transform: scale(1.2);
+        }
+
+        h2 {
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 800;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            font-size: 20px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0, 209, 255, 0.5);
+            text-transform: uppercase;
+        }
+
+        /* 严重受伤时的动画 */
+        .critical {
+            animation: critical-flash 0.8s infinite alternate;
+        }
+
+        @keyframes critical-flash {
+            from { stroke: #ff0000; fill: #3d0000; filter: drop-shadow(0 0 5px red); }
+            to { stroke: #ff5555; fill: #600000; filter: drop-shadow(0 0 20px red); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <h2>Operator Status</h2>
+
+    <div class="hud-container">
+        <div class="corner-mark tl"></div>
+        <div class="corner-mark tr"></div>
+        <div class="corner-mark bl"></div>
+        <div class="corner-mark br"></div>
+
+        <!-- 
+             ViewBox 扩大宽度到 280 (原240) 以容纳张开的手臂 
+             中心点 X ≈ 140
+        -->
+        <svg id="body-svg" viewBox="0 0 280 460" xmlns="http://www.w3.org/2000/svg">
+
+            <!-- 
+                头部：保持居中
+                cx = 140
+            -->
+            <ellipse id="head" class="body-part" cx="140" cy="50" rx="28" ry="32" style="fill: rgb(27, 32, 38); stroke: rgb(62, 76, 94);"></ellipse>
+
+            <!--
+                躯干：稍微修改以适应张开的大腿
+                下部变窄一点，更显身材
+            -->
+            <path id="torso" class="body-part" d="
+                M 105,95
+                Q 140,85 175,95
+                Q 185,100 180,150
+                L 175,200
+                Q 175,230 140,230
+                Q 105,230 105,200
+                L 100,150
+                Q 95,100 105,95 Z" style="fill: rgb(27, 32, 38); stroke: rgb(62, 76, 94);"></path>
+
+            <!--
+                左臂 (A-Pose)
+                肩膀不动，手腕向左下方移动
+                X 坐标往左减小
+            -->
+            <path id="left-arm" class="body-part" d="
+                M 90,100
+                Q 70,95 60,125
+                L 30,195
+                Q 20,220 45,225
+                Q 65,225 70,200
+                L 85,135
+                Q 85,105 90,100 Z" style="fill: rgb(27, 32, 38); stroke: rgb(62, 76, 94);"></path>
+
+            <!--
+                右臂 (A-Pose)
+                镜像处理，X 坐标往右增加
+            -->
+            <path id="right-arm" class="body-part" d="
+                M 190,100
+                Q 210,95 220,125
+                L 250,195
+                Q 260,220 235,225
+                Q 215,225 210,200
+                L 195,135
+                Q 195,105 190,100 Z" style="fill: rgb(27, 32, 38); stroke: rgb(62, 76, 94);"></path>
+
+            <!--
+                左腿 (张开)
+                起始点 X 保持在胯部，结束点 X 向左移
+            -->
+            <path id="left-leg" class="body-part" d="
+                M 110,240
+                Q 105,240 100,260
+                L 80,360
+                Q 45,390 95,390
+                Q 110,390 115,360
+                L 130,260
+                Q 140,240 130,240 Z" style="fill: rgb(27, 32, 38); stroke: rgb(62, 76, 94);"></path>
+
+            <!--
+                右腿 (张开)
+            -->
+            <path id="right-leg" class="body-part" d="
+                M 170,240
+                Q 175,240 180,260
+                L 200,360
+                Q 235,390 185,390
+                Q 170,390 165,360
+                L 150,260
+                Q 142,240 150,240 Z" style="fill: rgb(27, 32, 38); stroke: rgb(62, 76, 94);"></path>
+
+        </svg>
+    </div>
+
+    <!-- 控制面板布局优化，改为左右两列，更像仪表盘 -->
+    <div class="controls">
+        <div class="row">
+            <div class="col">
+                <div class="control-group">
+                    <label>Head</label>
+                    <input type="range" min="0" max="100" value="100" oninput="updatePart('head', this.value)">
+                </div>
+                <div class="control-group">
+                    <label>Torso</label>
+                    <input type="range" min="0" max="100" value="100" oninput="updatePart('torso', this.value)">
+                </div>
+            </div>
+            <div class="col">
+                <!-- 留空或放整体状态 -->
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col">
+                <div class="control-group">
+                    <label>L.Arm</label>
+                    <input type="range" min="0" max="100" value="100" oninput="updatePart('left-arm', this.value)">
+                </div>
+                <div class="control-group">
+                    <label>L.Leg</label>
+                    <input type="range" min="0" max="100" value="100" oninput="updatePart('left-leg', this.value)">
+                </div>
+            </div>
+            <div class="col">
+                <div class="control-group">
+                    <label>R.Arm</label>
+                    <input type="range" min="0" max="100" value="100" oninput="updatePart('right-arm', this.value)">
+                </div>
+                <div class="control-group">
+                    <label>R.Leg</label>
+                    <input type="range" min="0" max="100" value="100" oninput="updatePart('right-leg', this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 颜色生成器：从绿(健康) -> 黄(轻伤) -> 红(重伤)
+        function getHealthColor(hp) {
+            hp = parseInt(hp);
+            
+            // 特殊处理：0血显示极暗的红色
+            if (hp <= 0) return '#2a0000';
+            
+            const hue = (hp / 100) * 120; 
+            // 调整饱和度和亮度，让颜色更像发光体
+            return `hsl(${hue}, 90%, 40%)`;
+        }
+
+        function updatePart(partId, health) {
+            const element = document.getElementById(partId);
+            if (!element) return;
+            
+            // 1. 处理颜色
+            if (health >= 100) {
+                // 满血：标准装甲色
+                element.style.fill = '#1b2026'; 
+                element.style.stroke = '#3e4c5e';
+                element.classList.remove('critical');
+            } else {
+                const color = getHealthColor(health);
+                element.style.fill = color;
+                element.style.stroke = `hsl(${(health/100)*120}, 100%, 70%)`;
+                
+                // 2. 处理危急状态动画
+                if (health < 30) {
+                    element.classList.add('critical');
+                } else {
+                    element.classList.remove('critical');
+                }
+            }
+        }
+
+        // 初始渲染
+        window.onload = () => {
+            const parts = ['head', 'torso', 'left-arm', 'right-arm', 'left-leg', 'right-leg'];
+            parts.forEach(p => updatePart(p, 100));
+        };
+    </script>
+</body>
+</html>
