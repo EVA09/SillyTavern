@@ -1,0 +1,2371 @@
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>诊疗日记</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap"
+        rel="stylesheet"
+    />
+    <style>
+        .yy-debug-panel-diary {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-width: 380px;
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 999999;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            line-height: 1.4;
+        }
+        .yy-debug-panel-diary div {
+            margin: 2px 0;
+            word-break: break-all;
+        }
+        .yy-debug-panel-diary .yy-debug-title {
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 4px;
+        }
+
+        :root {
+            --ink: #5a4635;
+            --accent: #b48a60;
+            --paper: #f5ecd7;
+            --border: rgba(90, 70, 53, 0.35);
+            --line: rgba(90, 70, 53, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: 'Noto Serif SC', serif;
+            color: var(--ink);
+        }
+
+        .yy-theme-medical-record {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px 28px 70px 60px;
+            background:
+                    radial-gradient(600px 320px at 18% 12%, rgba(199, 162, 123, 0.14), transparent),
+                    linear-gradient(180deg, #f8f1e4, #efe6d4);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+            clip-path: polygon(
+                    0% 2%,
+                    3% 1%,
+                    6% 2%,
+                    9% 0%,
+                    100% 1%,
+                    99% 8%,
+                    100% 18%,
+                    98% 30%,
+                    100% 42%,
+                    99% 58%,
+                    100% 72%,
+                    98% 84%,
+                    100% 92%,
+                    97% 98%,
+                    0% 100%
+            );
+        }
+
+        .yy-theme-medical-record::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.02) 0 2px, transparent 2px 4px),
+                    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.015) 0 2px, transparent 2px 4px);
+            mix-blend-mode: multiply;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .yy-theme-medical-record::after {
+            content: '';
+            position: absolute;
+            left: 22px;
+            top: 0;
+            bottom: 0;
+            width: 18px;
+            background: radial-gradient(circle at center, rgba(90, 70, 53, 0.45) 4px, transparent 5px);
+            background-size: 18px 72px;
+            background-repeat: repeat-y;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .yy-content-separator {
+            position: absolute;
+            left: 52px;
+            top: 18px;
+            bottom: 18px;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, rgba(90, 70, 53, 0.18), transparent);
+        }
+
+        .yy-medical-header {
+            text-align: center;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .yy-medical-title {
+            margin: 0;
+            font-weight: 700;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+        .yy-medical-subtitle {
+            font-size: 13px;
+            color: rgba(90, 70, 53, 0.6);
+            font-style: italic;
+        }
+
+        .yy-info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .yy-info-field {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .yy-info-label {
+            font-weight: 600;
+        }
+        .yy-info-value {
+            border-bottom: 1px dashed var(--line);
+            padding: 0 6px;
+            color: rgba(90, 70, 53, 0.75);
+        }
+
+        .yy-section-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            margin: 18px 0 10px;
+            padding-left: 10px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .yy-diagnosis-box,
+        .yy-small-box {
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 13px;
+            line-height: 1.8;
+            color: rgba(90, 70, 53, 0.85);
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .yy-small-box {
+            font-size: 12px;
+            height: 120px; /* 固定高度 */
+            max-height: 120px;
+        }
+
+        .yy-two-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+        }
+
+        .yy-medication-list {
+            font-size: 12px;
+            border: none; /* 移除边框 */
+            border-radius: 0;
+            background: transparent; /* 透明背景 */
+            padding: 0;
+            line-height: 2;
+        }
+        .yy-medication-list .note-label {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .yy-events-accordion {
+            margin-top: 18px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.35);
+            overflow: hidden;
+        }
+        .yy-events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.3s;
+        }
+        .yy-events-header:hover {
+            background: rgba(180, 138, 96, 0.18);
+        }
+        .yy-events-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .yy-events-title::before {
+            content: '📋';
+        }
+        .yy-events-toggle {
+            transition: transform 0.3s;
+            color: var(--accent);
+        }
+        .yy-events-toggle.yy-expanded {
+            transform: rotate(180deg);
+        }
+        .yy-events-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+        .yy-events-content.yy-expanded {
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .yy-events-list {
+            padding: 12px 16px;
+            font-size: 12px;
+            color: rgba(90, 70, 53, 0.8);
+        }
+        .yy-event-item {
+            border-bottom: 1px dashed rgba(90, 70, 53, 0.18);
+            padding: 6px 0 6px 14px;
+            position: relative;
+        }
+        .yy-event-item::before {
+            content: '▪';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+        .yy-event-empty {
+            padding: 14px;
+            text-align: center;
+            font-style: italic;
+            color: rgba(90, 70, 53, 0.6);
+        }
+
+        .yy-signature-area {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 14px;
+            border-top: 1px dashed var(--line);
+            font-size: 12px;
+        }
+        .yy-signature-field {
+            display: flex;
+            gap: 6px;
+        }
+        .yy-signature-value {
+            border-bottom: 1px solid var(--line);
+            padding: 0 10px;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .yy-page-nav {
+            position: absolute;
+            right: 18px;
+            bottom: 18px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .yy-page-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 74px;
+        }
+        .yy-page-btn:hover {
+            background: rgba(180, 138, 96, 0.22);
+            transform: translateY(-2px);
+        }
+        .yy-page-btn.yy-active {
+            background: linear-gradient(135deg, #b48a60, #a67c52);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 6px 14px rgba(180, 138, 96, 0.35);
+        }
+        .yy-medical-record-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #6c5ce7, #5f4dd1);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 74px;
+            border-color: transparent;
+        }
+        .yy-medical-record-btn:hover {
+            background: linear-gradient(135deg, #7c6cf7, #6f5de1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(108, 92, 231, 0.35);
+        }
+        .yy-npc-list-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 74px;
+            border-color: transparent;
+        }
+        .yy-npc-list-btn:hover {
+            background: linear-gradient(135deg, #ff5e4c, #d04333);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(231, 76, 60, 0.35);
+        }
+
+        /* 右上角按钮组 */
+        .yy-top-buttons {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .yy-top-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .yy-top-btn-npc {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        .yy-top-btn-npc:hover {
+            background: linear-gradient(135deg, #ff5e4c, #d04333);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(231, 76, 60, 0.4);
+        }
+        .yy-top-btn-medical {
+            background: linear-gradient(135deg, #6c5ce7, #5f4dd1);
+        }
+        .yy-top-btn-medical:hover {
+            background: linear-gradient(135deg, #7c6cf7, #6f5de1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(108, 92, 231, 0.4);
+        }
+
+        /* 初始化弹窗样式 */
+        .yy-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999999;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .yy-modal.yy-show {
+            display: flex;
+            opacity: 1;
+        }
+        .yy-modal-content {
+            background: linear-gradient(180deg, #f8f1e4, #efe6d4);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            width: 90%;
+            padding: 0;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+            font-family: 'Noto Serif SC', serif;
+        }
+        .yy-modal.yy-show .yy-modal-content {
+            transform: scale(1);
+        }
+        .yy-modal-content::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.02) 0 2px, transparent 2px 4px);
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        .yy-modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 2px dashed var(--border);
+            text-align: center;
+        }
+        .yy-modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: 2px;
+        }
+        .yy-modal-body {
+            padding: 24px;
+            color: var(--ink);
+            line-height: 1.8;
+        }
+        .yy-modal-body p {
+            margin: 0 0 12px 0;
+            font-size: 15px;
+        }
+        .yy-modal-note {
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(180, 138, 96, 0.1);
+            border-left: 3px solid var(--accent);
+            border-radius: 4px;
+        }
+        .yy-modal-note small {
+            font-size: 13px;
+            color: var(--accent);
+            opacity: 0.8;
+        }
+        /* 输入框焦点样式 */
+        #yyFetishInput:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(180, 138, 96, 0.15);
+        }
+        .yy-modal-footer {
+            padding: 16px 24px 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            border-top: 2px dashed var(--border);
+        }
+        .yy-modal-btn {
+            padding: 10px 24px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Serif SC', serif;
+        }
+        .yy-btn-cancel {
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--ink);
+        }
+        .yy-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .yy-btn-confirm {
+            background: linear-gradient(135deg, #b48a60, #a67c52);
+            color: #fff;
+            border-color: transparent;
+        }
+        .yy-btn-confirm:hover {
+            background: linear-gradient(135deg, #c59a70, #b68c62);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(180, 138, 96, 0.4);
+        }
+
+        /* 攻略进度面板样式 */
+        .yy-strategy-section {
+            margin-top: 24px;
+            border-top: 2px dashed var(--border);
+            padding-top: 16px;
+        }
+        .yy-strategy-toggle {
+            width: 100%;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(180, 138, 96, 0.12), rgba(180, 138, 96, 0.08));
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ink);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Serif SC', serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: space-between;
+        }
+        .yy-strategy-toggle .yy-toggle-icon,
+        .yy-strategy-toggle .yy-toggle-text {
+            flex-shrink: 0;
+        }
+        .yy-current-stage {
+            margin-left: auto;
+            font-size: 13px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(180, 138, 96, 0.15);
+            color: var(--accent);
+            font-weight: 500;
+        }
+        .yy-strategy-toggle:hover {
+            background: linear-gradient(135deg, rgba(180, 138, 96, 0.18), rgba(180, 138, 96, 0.12));
+            border-color: var(--accent);
+        }
+        .yy-toggle-icon {
+            transition: transform 0.3s;
+            font-size: 12px;
+        }
+        .yy-strategy-toggle.yy-expanded .yy-toggle-icon {
+            transform: rotate(180deg);
+        }
+        .yy-strategy-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            margin-top: 12px;
+        }
+        .yy-strategy-panel.yy-expanded {
+            max-height: 500px;
+        }
+        .yy-current-stage.yy-stage-1 {
+            background: rgba(180, 180, 180, 0.3);
+            color: #666;
+        }
+        .yy-current-stage.yy-stage-2 {
+            background: rgba(240, 200, 100, 0.25);
+            color: #a67c2e;
+        }
+        .yy-current-stage.yy-stage-3 {
+            background: rgba(240, 140, 80, 0.3);
+            color: #d97943;
+        }
+        .yy-current-stage.yy-stage-4 {
+            background: rgba(100, 180, 120, 0.3);
+            color: #2d8659;
+        }
+        .yy-events-container {
+            padding: 4px;
+            max-height: 460px;
+            overflow-y: auto;
+        }
+        .yy-event-item {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.6);
+            border-left: 3px solid var(--accent);
+            border-radius: 3px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--ink);
+        }
+        .yy-event-key {
+            font-size: 11px;
+            color: var(--accent);
+            opacity: 0.6;
+            margin-right: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        .yy-loading {
+            text-align: center;
+            padding: 16px;
+            color: var(--accent);
+            opacity: 0.6;
+            font-size: 13px;
+        }
+
+        .yy-page-container {
+            position: relative;
+            perspective: 1400px;
+            min-height: 520px;
+        }
+        .yy-page-content {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            transform-origin: left center;
+            transform: rotateY(-80deg) translateZ(-40px);
+            filter: blur(2px);
+            transition:
+                    transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    opacity 0.5s ease,
+                    filter 0.5s ease;
+        }
+        .yy-page-content.yy-active {
+            position: relative;
+            opacity: 1;
+            pointer-events: auto;
+            transform: rotateY(0deg) translateZ(0);
+            filter: blur(0);
+        }
+
+        .yy-cover-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition:
+                    opacity 0.5s ease,
+                    visibility 0.5s ease;
+        }
+        .yy-cover-overlay.yy-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #yy-mainContent {
+            transition: opacity 0.5s ease;
+        }
+        #yy-mainContent.yy-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .yy-cover-container {
+            position: relative;
+            padding: 46px 54px;
+            max-width: 520px;
+            text-align: center;
+            border-radius: 18px;
+            background:
+                    radial-gradient(640px 320px at 18% 10%, rgba(199, 162, 123, 0.14), transparent),
+                    linear-gradient(180deg, #f8f1e4, #efe6d4);
+            border: 2px solid rgba(90, 70, 53, 0.32);
+            box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+        }
+        .yy-cover-title {
+            font-size: 30px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .yy-cover-subtitle {
+            font-size: 15px;
+            color: rgba(90, 70, 53, 0.68);
+            margin-bottom: 28px;
+        }
+        .yy-cover-description {
+            font-size: 13px;
+            color: rgba(90, 70, 53, 0.78);
+            line-height: 1.9;
+            margin-bottom: 34px;
+        }
+        .yy-cover-button {
+            padding: 14px 36px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #b48a60, #a67c52);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(180, 138, 96, 0.45);
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .yy-cover-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(180, 138, 96, 0.5);
+        }
+        .yy-cover-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .yy-loading-text {
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--accent);
+            display: none;
+        }
+
+        @media (max-width: 520px) {
+            .yy-theme-medical-record {
+                padding: 20px 18px 70px 46px;
+            }
+            .yy-top-buttons {
+                top: 12px;
+                right: 12px;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .yy-top-btn {
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+            .yy-page-nav {
+                right: 12px;
+                bottom: 16px;
+            }
+            .yy-two-column {
+                grid-template-columns: 1fr;
+            }
+            .yy-signature-area {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .yy-cover-container {
+                padding: 36px 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- 封面遮罩层 -->
+<div class="yy-cover-overlay" id="yy-coverOverlay">
+    <div class="yy-cover-container">
+        <h1 class="yy-cover-title">心理咨询诊疗记录</h1>
+        <p class="yy-cover-subtitle">温知夏 · 性瘾康复治疗档案</p>
+        <div class="yy-cover-description">
+            这是一份来自市心理健康中心的完整治疗档案。<br />
+            档案记录了患者温知夏在2018年至2019年间的康复治疗过程。<br /><br />
+            点击下方按钮，根据你的偏好定制专属的攻略线索。<br /><br />
+            <span style="font-size: 12px; color: rgba(90, 70, 53, 0.6); font-style: italic;">
+            💡 感谢 Maybe 大佬帮我修复状态栏，请开启小白X插件渲染游玩。
+          </span>
+        </div>
+        <button class="yy-cover-button" id="yy-initButton">🔓 开始定制攻略系统</button>
+        <div class="yy-loading-text" id="yy-loadingText">正在生成中...</div>
+    </div>
+</div>
+
+<!-- 初始化确认弹窗（必须在顶层） -->
+<div class="yy-modal" id="yyInitModal">
+    <div class="yy-modal-content">
+        <div class="yy-modal-header">
+            <h3>诊疗日记系统 - 定制攻略</h3>
+        </div>
+        <div class="yy-modal-body">
+            <p style="margin-bottom: 12px; font-size: 14px; line-height: 1.6">
+                请输入你的<strong>性癖偏好</strong>，用于定制专属攻略线索：
+            </p>
+
+            <!-- 文本输入框 -->
+            <textarea
+                id="yyFetishInput"
+                placeholder="例如：足部、丝袜、制服、温柔攻略、公共场合等&#10;可以输入多个，用逗号分隔"
+                style="
+              width: 100%;
+              min-height: 100px;
+              padding: 12px;
+              border: 2px solid rgba(90, 70, 53, 0.2);
+              border-radius: 6px;
+              font-size: 14px;
+              font-family: inherit;
+              line-height: 1.6;
+              resize: vertical;
+              background: #fff;
+              transition: border-color 0.3s;
+              box-sizing: border-box;
+            "
+            ></textarea>
+
+            <div class="yy-modal-note" style="margin-top: 16px">
+                <small>💡 提示：输入内容越具体，生成的攻略线索越精准</small>
+            </div>
+            <div class="yy-modal-note">
+                <small>⏱️ 初始化过程需要 30-120 秒，请耐心等待</small>
+            </div>
+        </div>
+        <div class="yy-modal-footer">
+            <button class="yy-modal-btn yy-btn-cancel" id="yyInitCancel">稍后</button>
+            <button class="yy-modal-btn yy-btn-confirm" id="yyInitConfirm">开始生成</button>
+        </div>
+    </div>
+</div>
+
+<!-- NPC生成弹窗 -->
+<div class="yy-modal" id="yyNPCGenModal">
+    <div class="yy-modal-content" style="max-width: 600px;">
+        <div class="yy-modal-header">
+            <h3>🎭 生成新NPC</h3>
+        </div>
+        <div class="yy-modal-body">
+            <p style="margin-bottom: 12px; font-size: 14px; line-height: 1.6">
+                请输入NPC的基本设定，AI将自动生成完整的NPC数据：
+            </p>
+
+            <!-- 性癖输入框 -->
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: var(--accent); font-size: 13px;">
+                性癖方向（可选，留空AI随机）
+            </label>
+            <textarea
+                id="yyNPCFetishInput"
+                placeholder="例如：足控、丝袜、半公开场合&#10;可输入1-3个，用逗号分隔"
+                style="
+              width: 100%;
+              min-height: 80px;
+              padding: 12px;
+              border: 2px solid rgba(90, 70, 53, 0.2);
+              border-radius: 6px;
+              font-size: 14px;
+              font-family: inherit;
+              line-height: 1.6;
+              resize: vertical;
+              background: #fff;
+              transition: border-color 0.3s;
+              box-sizing: border-box;
+              margin-bottom: 16px;
+            "
+            ></textarea>
+
+            <!-- 身份输入框 -->
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: var(--accent); font-size: 13px;">
+                NPC身份/职业（必填）
+            </label>
+            <input
+                id="yyNPCIdentityInput"
+                type="text"
+                placeholder="例如：学校里的学生、图书馆管理员、健身房教练、邻居"
+                value="学校里的学生"
+                style="
+              width: 100%;
+              padding: 12px;
+              border: 2px solid rgba(90, 70, 53, 0.2);
+              border-radius: 6px;
+              font-size: 14px;
+              font-family: inherit;
+              background: #fff;
+              transition: border-color 0.3s;
+              box-sizing: border-box;
+            "
+            />
+
+            <div class="yy-modal-note" style="margin-top: 16px">
+                <small>💡 提示：AI生成需要60-120秒，请耐心等待</small>
+            </div>
+            <div class="yy-modal-note">
+                <small>⚠️ 生成的NPC将会添加到世界书和变量中，可在"角色列表"查看</small>
+            </div>
+        </div>
+        <div class="yy-modal-footer">
+            <button class="yy-modal-btn yy-btn-cancel" id="yyNPCGenCancel">取消</button>
+            <button class="yy-modal-btn yy-btn-confirm" id="yyNPCGenConfirm">开始生成</button>
+        </div>
+    </div>
+</div>
+
+<section class="yy-theme-medical-record yy-hidden" id="yy-mainContent">
+    <div class="yy-content-separator"></div>
+
+    <!-- 右上角角色列表按钮 -->
+    <div class="yy-top-buttons">
+        <button class="yy-top-btn yy-top-btn-npc" id="yy-npcListBtn">👥 角色列表</button>
+    </div>
+
+    <div class="yy-medical-header">
+        <h1 class="yy-medical-title">心理咨询诊疗记录</h1>
+        <div class="yy-medical-subtitle">Psychological Consultation Record</div>
+    </div>
+
+    <div class="yy-page-nav">
+        <button class="yy-medical-record-btn" id="yy-medicalRecordBtn" style="display: none;">📋 探索病例</button>
+        <button class="yy-page-btn yy-active" data-page="1">● 线索一</button>
+        <button class="yy-page-btn" data-page="2">○ 线索二</button>
+        <button class="yy-page-btn" data-page="3">○ 线索三</button>
+    </div>
+
+    <div class="yy-page-container">
+        <div class="yy-page-content yy-active" data-page-content="1">
+            <div class="yy-info-row">
+                <div class="yy-info-field">
+                    <span class="yy-info-label">日期:</span><span class="yy-info-value">2018年9月</span>
+                </div>
+                <div class="yy-info-field">
+                    <span class="yy-info-label">姓名:</span><span class="yy-info-value">温知夏</span>
+                </div>
+                <div class="yy-info-field">
+                    <span class="yy-info-label">医院:</span><span class="yy-info-value">市心理健康中心</span>
+                </div>
+            </div>
+
+            <div class="yy-section-title">观察记录</div>
+            <div class="yy-diagnosis-box">谈及足部触碰时，患者会立刻交叉双臂、移开视线并试图结束话题，语速明显加快。</div>
+
+            <div class="yy-two-column">
+                <div>
+                    <div class="yy-section-title">患者表述</div>
+                    <div class="yy-small-box">“那时候……我就像着了魔一样停不下来。”（声音压低，手指绞紧衣角）</div>
+                </div>
+                <div>
+                    <div class="yy-section-title">行为模式</div>
+                    <div class="yy-small-box">在家中会下意识摸锁着的抽屉，但立刻收回手；频繁用冷水洗脚以降低触觉敏感。</div>
+                </div>
+            </div>
+
+            <div class="yy-section-title">治疗师备注</div>
+            <div class="yy-medication-list">
+                <span>•</span><span>建议：帮助患者区分“欲望存在”与“失控行为”之间的差异，并建立掌控感。</span><br /><span
+            >•</span
+            ><span>关注：足部触觉为高敏触发点，需避免“失败 = 原形毕露”的极端认知。</span>
+            </div>
+
+            <div class="yy-signature-area">
+                <div class="yy-signature-field"><span>治疗师:</span><span class="yy-signature-value">李医生</span></div>
+                <div class="yy-signature-field">
+                    <span>记录日期:</span><span class="yy-signature-value">2018/09/15</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="yy-page-content" data-page-content="2">
+            <div class="yy-info-row">
+                <div class="yy-info-field">
+                    <span class="yy-info-label">日期:</span><span class="yy-info-value">2018年10月</span>
+                </div>
+                <div class="yy-info-field">
+                    <span class="yy-info-label">姓名:</span><span class="yy-info-value">温知夏</span>
+                </div>
+                <div class="yy-info-field">
+                    <span class="yy-info-label">医院:</span><span class="yy-info-value">市心理健康中心</span>
+                </div>
+            </div>
+
+            <div class="yy-section-title">观察记录</div>
+            <div class="yy-diagnosis-box">讨论胸部相关刺激时，会本能地抱臂掩护，语气迟疑；换衣时明显提防贴身材质。</div>
+
+            <div class="yy-two-column">
+                <div>
+                    <div class="yy-section-title">患者表述</div>
+                    <div class="yy-small-box">“就连穿衣服都会……好像又回到从前，我不想再体验了。”（目光飘忽，呼吸变浅）</div>
+                </div>
+                <div>
+                    <div class="yy-section-title">行为模式</div>
+                    <div class="yy-small-box">倾向选择高领、宽松衣物；在镜子前检查衣物与皮肤的“安全距离”后才敢出门。</div>
+                </div>
+            </div>
+
+            <div class="yy-section-title">治疗师备注</div>
+            <div class="yy-medication-list">
+                <span>•</span><span>建议：以渐进式脱敏训练降低“接触 = 失控”的联想强度。</span><br /><span>•</span
+            ><span>关注：自责情绪强烈，会通过填满行程来逃避身体感受。</span>
+            </div>
+
+            <div class="yy-signature-area">
+                <div class="yy-signature-field"><span>治疗师:</span><span class="yy-signature-value">李医生</span></div>
+                <div class="yy-signature-field">
+                    <span>记录日期:</span><span class="yy-signature-value">2018/10/22</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="yy-page-content" data-page-content="3">
+            <div class="yy-info-row">
+                <div class="yy-info-field">
+                    <span class="yy-info-label">日期:</span><span class="yy-info-value">2019年1月</span>
+                </div>
+                <div class="yy-info-field">
+                    <span class="yy-info-label">姓名:</span><span class="yy-info-value">温知夏</span>
+                </div>
+                <div class="yy-info-field">
+                    <span class="yy-info-label">医院:</span><span class="yy-info-value">市心理健康中心</span>
+                </div>
+            </div>
+
+            <div class="yy-section-title">观察记录</div>
+            <div class="yy-diagnosis-box">回忆公共场合的失控经历会触发脸部泛红、视线逃避及手指发抖，常伴随彻夜失眠。</div>
+
+            <div class="yy-two-column">
+                <div>
+                    <div class="yy-section-title">患者表述</div>
+                    <div class="yy-small-box">“在图书馆那次……我到现在都没办法原谅自己。”（双肩轻颤，声音发抖）</div>
+                </div>
+                <div>
+                    <div class="yy-section-title">行为模式</div>
+                    <div class="yy-small-box">避免人群密集场合，规划出行路线时刻意绕开曾失控的地点。</div>
+                </div>
+            </div>
+
+            <div class="yy-section-title">治疗师备注</div>
+            <div class="yy-medication-list">
+                <span>•</span><span>建议：让患者理解羞耻是复原过程的一部分，建立情绪疏导方案。</span><br /><span>•</span
+            ><span>关注：公共场合触发会强化“我不配亲密关系”的信念。</span>
+            </div>
+
+            <div class="yy-signature-area">
+                <div class="yy-signature-field"><span>治疗师:</span><span class="yy-signature-value">李医生</span></div>
+                <div class="yy-signature-field">
+                    <span>记录日期:</span><span class="yy-signature-value">2019/01/12</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 攻略进度面板 -->
+    <div class="yy-strategy-section">
+        <button class="yy-strategy-toggle" id="yyStrategyToggle">
+            <span class="yy-toggle-icon">▼</span>
+            <span class="yy-toggle-text">攻略进度</span>
+            <span class="yy-current-stage" id="yyCurrentStage">加载中...</span>
+        </button>
+
+        <div class="yy-strategy-panel" id="yyStrategyPanel">
+            <!-- 当前线索的事件列表 -->
+            <div class="yy-events-container" id="yyEventsContainer">
+                <div class="yy-loading">正在加载事件列表...</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+  function showPage(page) {
+    var contents = document.querySelectorAll('.yy-page-content');
+    var buttons = document.querySelectorAll('.yy-page-btn');
+    var labels = ['一', '二', '三'];
+
+    for (var i = 0; i < contents.length; i++) {
+      if (Number(contents[i].dataset.pageContent) === page) {
+        contents[i].classList.add('yy-active');
+      } else {
+        contents[i].classList.remove('yy-active');
+      }
+    }
+
+    for (var j = 0; j < buttons.length; j++) {
+      if (Number(buttons[j].dataset.page) === page) {
+        buttons[j].classList.add('yy-active');
+        buttons[j].textContent = '● 线索' + labels[j];
+      } else {
+        buttons[j].classList.remove('yy-active');
+        buttons[j].textContent = '○ 线索' + labels[j];
+      }
+    }
+
+    // 更新攻略进度页
+    currentStrategyPage = page;
+    updateCurrentStage(); // 更新阶段标签
+
+    // 如果攻略面板是展开的，重新加载事件
+    var panel = document.getElementById('yyStrategyPanel');
+    if (panel && panel.classList.contains('yy-expanded')) {
+      loadCurrentClueEvents();
+    }
+  }
+
+  // 从SillyTavern变量读取诊疗日记内容
+  async function loadDiaryFromVariables() {
+    // 检查STscript函数是否可用
+    if (typeof STscript !== 'function') {
+      console.error('[诊疗日记] STscript函数不可用');
+      return;
+    }
+
+    console.log('[诊疗日记] 开始加载变量...');
+
+    const fields = [
+      { key: '观察记录', selectorIndex: 0 }, // 第1个 .yy-diagnosis-box
+      { key: '患者表述', selectorIndex: 0 }, // 第1个 .yy-small-box
+      { key: '行为模式', selectorIndex: 1 }, // 第2个 .yy-small-box
+      { key: '治疗师备注', isNotes: true }, // .yy-medication-list 里的 span
+    ];
+
+    for (let i = 1; i <= 3; i++) {
+      const pageEl = document.querySelector(`.yy-page-content[data-page-content="${i}"]`);
+      if (!pageEl) continue;
+
+      for (const field of fields) {
+        const varKey = `诊疗日记.线索${i}.${field.key}`;
+
+        try {
+          const valueRaw = await STscript(`/getvar ${varKey}`);
+          let value = valueRaw;
+
+          // 提取pipe字段
+          if (typeof valueRaw === 'object' && valueRaw !== null) {
+            if (valueRaw.pipe !== undefined) {
+              value = valueRaw.pipe;
+            } else {
+              // 如果是对象但没有pipe字段，说明变量不存在
+              value = '';
+            }
+          }
+
+          const content = String(value || '').trim();
+
+          if (content) {
+            let targetEl;
+
+            if (field.key === '观察记录') {
+              targetEl = pageEl.querySelector('.yy-diagnosis-box');
+            } else if (field.key === '患者表述') {
+              targetEl = pageEl.querySelectorAll('.yy-small-box')[0];
+            } else if (field.key === '行为模式') {
+              targetEl = pageEl.querySelectorAll('.yy-small-box')[1];
+            } else if (field.isNotes) {
+              // 治疗师备注：使用innerHTML支持HTML标签
+              targetEl = pageEl.querySelector('.yy-medication-list');
+            }
+
+            if (targetEl) {
+              if (field.isNotes) {
+                targetEl.innerHTML = content; // 支持HTML
+                console.log(`[诊疗日记] ✅ 线索${i} ${field.key}: 已更新（HTML）`);
+              } else {
+                targetEl.textContent = content; // 纯文本
+                console.log(`[诊疗日记] ✅ 线索${i} ${field.key}: ${content.length}字`);
+              }
+            }
+          } else {
+            console.warn(`[诊疗日记] ⚠️ 线索${i} ${field.key}: 为空`);
+            // 为空时弹出toastr警告
+            if (window.toastr) {
+              window.toastr.warning(
+                `线索${i} 的 "${field.key}" 字段为空，可能是AI生成时标签未正确闭合。请检查初始化脚本的AI输出。`,
+                '诊疗日记字段缺失',
+                { timeOut: 8000 },
+              );
+            }
+          }
+        } catch (e) {
+          console.error(`[诊疗日记] ❌ 读取${varKey}失败:`, e);
+        }
+      }
+    }
+
+    console.log('[诊疗日记] 变量加载完成');
+  }
+
+  // 初始化按钮点击处理
+  async function handleInitialize() {
+    const button = document.getElementById('yy-initButton');
+    const loadingText = document.getElementById('yy-loadingText');
+
+    // 读取用户输入的文本
+    const fetishInput = document.getElementById('yyFetishInput').value.trim();
+
+    if (!fetishInput) {
+      window.toastr && window.toastr.warning('请输入你的性癖偏好再开始生成');
+      return;
+    }
+
+    console.log('[初始化] 用户输入:', fetishInput);
+
+    button.disabled = true;
+    loadingText.style.display = 'block';
+
+    try {
+      // 检查STscript函数是否可用
+      if (typeof STscript !== 'function') {
+        throw new Error('STscript函数不可用,请确保在小白X模板环境中运行');
+      }
+
+      // 第一步：设置用户偏好变量
+      console.log('[初始化] 1/2 设置用户偏好变量...');
+      await STscript(`/setvar key=用户性癖 ${fetishInput}`);
+
+      // 第二步：调用初始化脚本
+      console.log('[初始化] 2/2 调用初始化脚本...');
+
+      // 检查小白X全局对象
+      console.log('[初始化] 检查环境 - window.xb:', typeof window.xb);
+      console.log('[初始化] 检查环境 - window.xbqte:', typeof window.xbqte);
+
+      let scriptTriggered = false;
+
+      // 方法1：使用小白X的全局函数（如果存在）
+      if (typeof window.xbqte === 'function') {
+        console.log('[初始化] 使用 window.xbqte() 调用...');
+        try {
+          await window.xbqte('诊疗日记');
+          scriptTriggered = true;
+          console.log('[初始化] xbqte() 调用成功');
+        } catch (e) {
+          console.error('[初始化] xbqte() 调用失败:', e);
+        }
+      }
+
+      // 方法2：通过executeSlashCommandsWithOptions调用（作为聊天消息）
+      if (!scriptTriggered) {
+        console.log('[初始化] 尝试通过 executeSlash + 自动发送...');
+        try {
+          // 添加超时保护
+          const executePromise = STscript('/xbqte 诊疗日记', {
+            handleExecutionErrors: false,
+            abortSignal: null,
+          });
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('executeSlash 超时（5秒）')), 5000),
+          );
+
+          console.log('[初始化] 等待 executeSlash 返回...');
+          const result = await Promise.race([executePromise, timeoutPromise]);
+
+          console.log('[初始化] executeSlash 返回成功:', result);
+          console.log('[初始化] 返回类型:', typeof result);
+          console.log('[初始化] 返回内容:', JSON.stringify(result));
+
+          // 检查返回结果
+          if (result && typeof result === 'object') {
+            if (result.pipe && result.pipe.includes('错误')) {
+              console.error('[初始化] executeSlash 返回错误:', result.pipe);
+              throw new Error(result.pipe);
+            } else {
+              console.log('[初始化] executeSlash 执行成功，pipe:', result.pipe);
+              scriptTriggered = true;
+            }
+          } else {
+            console.log('[初始化] executeSlash 返回了非对象结果，假定成功');
+            scriptTriggered = true;
+          }
+        } catch (e) {
+          console.log('[初始化] executeSlash 未立即返回（这是正常的，/xbqte 是异步命令）');
+          // 不要阻止后续方法尝试
+        }
+      }
+
+      // 方法3：尝试通过聊天输入框模拟用户输入
+      if (!scriptTriggered) {
+        console.log('[初始化] 尝试通过聊天框模拟输入...');
+        const textarea = document.getElementById('send_textarea');
+        const sendButton = document.getElementById('send_but');
+
+        console.log('[初始化] textarea 元素:', textarea ? '找到' : '未找到');
+        console.log('[初始化] sendButton 元素:', sendButton ? '找到' : '未找到');
+
+        if (textarea && sendButton) {
+          console.log('[初始化] 开始模拟聊天框输入...');
+          const originalValue = textarea.value;
+          textarea.value = '/xbqte 诊疗日记';
+
+          // 触发 input 事件
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+          console.log('[初始化] 已设置 textarea 内容并触发 input 事件');
+
+          // 等待一帧
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          // 点击发送按钮
+          console.log('[初始化] 准备点击发送按钮...');
+          sendButton.click();
+          console.log('[初始化] ✅ 命令已通过聊天框发送');
+          scriptTriggered = true;
+
+          // 恢复原值
+          setTimeout(() => {
+            textarea.value = originalValue;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            console.log('[初始化] 已恢复 textarea 原始值');
+          }, 200);
+        } else {
+          console.log('[初始化] 未找到聊天框元素（在iframe中正常），跳过方法3');
+        }
+      }
+
+      // 方法4：假定脚本已触发（因为 /xbqte 是异步的，可能不会立即返回）
+      if (!scriptTriggered) {
+        console.log('[初始化] executeSlash 可能已异步触发，直接进入等待阶段...');
+        scriptTriggered = true; // 假定已触发，进入轮询检测
+      }
+
+      // 等待脚本执行完成（轮询检测）
+      console.log('[初始化] 等待AI生成...');
+      loadingText.textContent = '正在生成攻略配置，请耐心等待...';
+
+      let attempts = 0;
+      const maxAttempts = 120; // 最多等待120秒
+      let found = false;
+
+      while (!found && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+
+        // 每3秒检查一次变量
+        if (attempts % 3 === 0) {
+          try {
+            const checkResult = await STscript('/getvar 诊疗日记.线索1.观察记录', { abortSignal: null });
+
+            let value = checkResult;
+
+            // 提取 pipe 字段
+            if (typeof checkResult === 'object' && checkResult !== null) {
+              if (checkResult.pipe !== undefined) {
+                value = checkResult.pipe;
+              }
+            }
+
+            const valueStr = String(value || '');
+            const trimmedLength = valueStr.trim().length;
+
+            // 检查是否为有效字符串（非空）
+            if (typeof value === 'string' && trimmedLength > 0) {
+              console.log('[初始化] ✅ 检测到变量已写入！内容预览:', value.substring(0, 50) + '...');
+              found = true;
+              break;
+            }
+            // 不再输出"变量仍为空"的日志，减少噪音
+          } catch (e) {
+            // 静默处理检查失败
+          }
+        }
+
+        // 每10秒输出一次日志
+        if (attempts % 10 === 0) {
+          console.log(`[初始化] 等待中... ${attempts}秒`);
+        }
+      }
+
+      if (!found) {
+        throw new Error(`初始化超时（${attempts}秒），请检查小白X脚本是否正确运行`);
+      }
+
+      // 初始化完成，隐藏封面，显示主内容，加载变量
+      console.log('[初始化] 完成！显示诊疗日记...');
+      hideCover();
+      await loadDiaryFromVariables();
+    } catch (e) {
+      console.error('[初始化] 错误:', e);
+      alert('❌ 初始化失败: ' + e.message);
+      button.disabled = false;
+      loadingText.style.display = 'none';
+    }
+  }
+
+  // 隐藏封面，显示主内容
+  function hideCover() {
+    document.getElementById('yy-coverOverlay').classList.add('yy-hidden');
+    document.getElementById('yy-mainContent').classList.remove('yy-hidden');
+  }
+
+  // 检查是否已初始化
+  async function checkInitialized() {
+    // 检查STscript函数是否可用
+    if (typeof STscript !== 'function') return false;
+
+    try {
+      const result = await STscript('/getvar 诊疗日记.线索1.观察记录', { abortSignal: null });
+
+      console.log('[检查初始化] 原始返回:', result, typeof result);
+
+      let value = result;
+
+      // 处理对象返回值
+      if (typeof result === 'object' && result !== null) {
+        if (result.pipe !== undefined) {
+          value = result.pipe;
+        } else {
+          // 空对象说明变量不存在
+          console.log('[检查初始化] 变量不存在（空对象）');
+          return false;
+        }
+      }
+
+      // 检查是否为有效字符串
+      const isValid = typeof value === 'string' && value.trim().length > 0;
+      console.log('[检查初始化] 结果:', isValid, value?.substring(0, 50));
+
+      return isValid;
+    } catch (e) {
+      console.error('[检查初始化] 错误:', e);
+      return false;
+    }
+  }
+
+  // 检查是否获得母亲医院病例
+  async function checkMedicalRecord() {
+    if (typeof STscript !== 'function') return false;
+
+    try {
+      const result = await STscript('/xbgetvar 病例.母亲医院', { abortSignal: null });
+      console.log('[病例检查] 原始返回:', result, typeof result);
+
+      let hasRecord = false;
+
+      // 处理不同类型的返回值
+      if (typeof result === 'boolean') {
+        hasRecord = result;
+      } else if (typeof result === 'object' && result !== null) {
+        if (result.pipe !== undefined) {
+          hasRecord = result.pipe === true || result.pipe === 'true';
+        }
+      } else if (typeof result === 'string') {
+        hasRecord = result.toLowerCase() === 'true';
+      }
+
+      console.log('[病例检查] 是否获得病例:', hasRecord);
+
+      // 控制按钮显示/隐藏
+      const button = document.getElementById('yy-medicalRecordBtn');
+      if (button) {
+        button.style.display = hasRecord ? 'block' : 'none';
+        console.log('[病例检查] 按钮状态:', hasRecord ? '显示' : '隐藏');
+      }
+
+      return hasRecord;
+    } catch (e) {
+      console.error('[病例检查] 错误:', e);
+      return false;
+    }
+  }
+
+  // 显示NPC生成弹窗
+  function showNPCGenerationModal() {
+    console.log('[NPC生成] 显示生成弹窗');
+    const modal = document.getElementById('yyNPCGenModal');
+    if (modal) {
+      modal.classList.add('yy-show');
+    } else {
+      console.error('[NPC生成] 未找到弹窗元素 #yyNPCGenModal');
+    }
+  }
+
+  // 隐藏NPC生成弹窗
+  function hideNPCGenModal() {
+    const modal = document.getElementById('yyNPCGenModal');
+    if (modal) {
+      modal.classList.remove('yy-show');
+    }
+  }
+
+  // NPC生成处理函数
+  async function handleNPCGeneration() {
+    const fetishInput = document.getElementById('yyNPCFetishInput').value.trim();
+    const identityInput = document.getElementById('yyNPCIdentityInput').value.trim();
+
+    console.log('[NPC生成] 用户输入 - 性癖:', fetishInput);
+    console.log('[NPC生成] 用户输入 - 身份:', identityInput);
+
+    if (!identityInput) {
+      window.toastr && window.toastr.error('请输入NPC的身份/职业');
+      return;
+    }
+
+    // 关闭弹窗
+    hideNPCGenModal();
+
+    try {
+      // 检查STscript函数是否可用
+      if (typeof STscript !== 'function') {
+        throw new Error('STscript函数不可用');
+      }
+
+      // 设置临时变量（传递给脚本）
+      console.log('[NPC生成] 1/3 设置临时变量...');
+      await STscript(`/setvar key=_temp_npc_fetishes ${fetishInput || ''}`);
+      await STscript(`/setvar key=_temp_npc_identity ${identityInput}`);
+
+      window.toastr && window.toastr.info('🎨 AI正在生成NPC，预计需要60-120秒，请耐心等待...');
+
+      // 调用"病例"脚本
+      console.log('[NPC生成] 2/3 调用脚本：病例');
+
+      let scriptTriggered = false;
+
+      // 方法1：使用小白X的全局函数
+      if (typeof window.xbqte === 'function') {
+        console.log('[NPC生成] 使用 window.xbqte() 调用...');
+        try {
+          await window.xbqte('病例');
+          scriptTriggered = true;
+          console.log('[NPC生成] xbqte() 调用成功');
+        } catch (e) {
+          console.error('[NPC生成] xbqte() 调用失败:', e);
+        }
+      }
+
+      // 方法2：通过executeSlash调用
+      if (!scriptTriggered) {
+        console.log('[NPC生成] 尝试通过 executeSlash 调用...');
+        try {
+          const executePromise = STscript('/xbqte 病例', {
+            handleExecutionErrors: false,
+            abortSignal: null,
+          });
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('executeSlash 超时（5秒）')), 5000),
+          );
+
+          const result = await Promise.race([executePromise, timeoutPromise]);
+          console.log('[NPC生成] executeSlash 返回:', result);
+          scriptTriggered = true;
+        } catch (e) {
+          console.log('[NPC生成] executeSlash 未立即返回（正常，异步执行）');
+          scriptTriggered = true; // 假定已触发
+        }
+      }
+
+      // 等待生成完成（轮询检测NPC变量）
+      console.log('[NPC生成] 3/3 等待AI生成...');
+
+      let attempts = 0;
+      const maxAttempts = 120; // 最多等待120秒
+      let found = false;
+
+      while (!found && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+
+        // 每3秒检查一次
+        if (attempts % 3 === 0) {
+          try {
+            const checkResult = await STscript('/xbgetvar NPC攻略.NPC数据', { abortSignal: null });
+
+            // 检查是否有新的NPC数据
+            if (checkResult) {
+              let npcData = {};
+
+              if (typeof checkResult === 'object' && checkResult !== null) {
+                if (checkResult.pipe !== undefined) {
+                  const pipeValue = checkResult.pipe;
+                  if (typeof pipeValue === 'string' && pipeValue.trim()) {
+                    npcData = JSON.parse(pipeValue);
+                  } else if (typeof pipeValue === 'object' && pipeValue !== null) {
+                    npcData = pipeValue;
+                  }
+                } else {
+                  npcData = checkResult;
+                }
+              } else if (typeof checkResult === 'string' && checkResult.trim()) {
+                npcData = JSON.parse(checkResult);
+              }
+
+              const npcCount = Object.keys(npcData).length;
+
+              if (npcCount > 0) {
+                console.log('[NPC生成] ✅ 检测到NPC数据，数量:', npcCount);
+                found = true;
+                break;
+              }
+            }
+          } catch (e) {
+            // 静默处理检查失败
+          }
+        }
+
+        // 每10秒输出一次日志
+        if (attempts % 10 === 0) {
+          console.log(`[NPC生成] 等待中... ${attempts}秒`);
+        }
+      }
+
+      if (!found) {
+        throw new Error(`生成超时（${attempts}秒），请检查脚本是否正确运行`);
+      }
+
+      // 生成完成
+      console.log('[NPC生成] 完成！');
+      window.toastr && window.toastr.success('✅ NPC生成完成！可在"角色列表"中查看');
+
+      // 清空输入框
+      document.getElementById('yyNPCFetishInput').value = '';
+      document.getElementById('yyNPCIdentityInput').value = '学校里的学生';
+
+    } catch (e) {
+      console.error('[NPC生成] 错误:', e);
+      window.toastr && window.toastr.error('❌ 生成失败: ' + e.message);
+    }
+  }
+
+  // 显示NPC列表弹窗
+  async function showNPCListModal() {
+    if (typeof STscript !== 'function') {
+      window.toastr && window.toastr.error('STscript不可用');
+      return;
+    }
+
+    // 创建加载中的模态框
+    const modal = document.createElement('div');
+    modal.className = 'yy-modal yy-show';
+    modal.innerHTML = `
+          <div class="yy-modal-content" style="max-width: 700px;">
+            <div class="yy-modal-header">
+              <h3>👥 角色列表</h3>
+            </div>
+            <div class="yy-modal-body" id="yy-npc-modal-body" style="max-height: 500px; overflow-y: auto; line-height: 1.8;">
+              <div style="text-align: center; padding: 40px; color: var(--accent);">
+                <div style="font-size: 32px; margin-bottom: 16px;">⏳</div>
+                <div>正在加载角色数据...</div>
+              </div>
+            </div>
+            <div class="yy-modal-footer">
+              <button class="yy-modal-btn yy-btn-confirm" onclick="this.closest('.yy-modal').remove()">
+                关闭
+              </button>
+            </div>
+          </div>
+        `;
+
+    document.body.appendChild(modal);
+
+    // 点击遮罩关闭
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    // 异步加载NPC数据
+    try {
+      console.log('[NPC列表] 开始加载NPC数据...');
+      const result = await STscript('/xbgetvar NPC攻略.NPC数据', { abortSignal: null });
+      console.log('[NPC列表] 原始返回:', result);
+
+      let npcData = {};
+
+      // 解析返回值
+      if (typeof result === 'object' && result !== null) {
+        if (result.pipe !== undefined) {
+          const pipeValue = result.pipe;
+          if (typeof pipeValue === 'string' && pipeValue.trim()) {
+            npcData = JSON.parse(pipeValue);
+          } else if (typeof pipeValue === 'object' && pipeValue !== null) {
+            npcData = pipeValue;
+          }
+        } else {
+          npcData = result;
+        }
+      } else if (typeof result === 'string' && result.trim()) {
+        npcData = JSON.parse(result);
+      }
+
+      console.log('[NPC列表] 解析后的NPC数据:', npcData);
+
+      const npcNames = Object.keys(npcData);
+      console.log('[NPC列表] NPC数量:', npcNames.length);
+
+      const modalBody = document.getElementById('yy-npc-modal-body');
+
+      if (npcNames.length === 0) {
+        modalBody.innerHTML = `
+              <div style="text-align: center; padding: 40px; color: rgba(90, 70, 53, 0.6);">
+                <div style="font-size: 32px; margin-bottom: 16px;">📭</div>
+                <div>暂无角色数据</div>
+                <div style="font-size: 13px; margin-top: 8px;">请先生成NPC</div>
+              </div>
+            `;
+        return;
+      }
+
+      // 构建NPC列表HTML
+      let html = '';
+
+      for (let i = 0; i < npcNames.length; i++) {
+        const npcName = npcNames[i];
+        const scenes = npcData[npcName];
+
+        console.log(`[NPC列表] 处理NPC: ${npcName}, 场景数据:`, scenes);
+
+        // 统计解锁情况（支持复杂对象结构）
+        const sceneKeys = Object.keys(scenes);
+        const completedCount = sceneKeys.filter(key => {
+          const scene = scenes[key];
+          return typeof scene === 'object' && scene !== null && scene.unlocked === "completed";
+        }).length;
+        const totalCount = sceneKeys.length;
+
+        // 判断情感阶段（基于completed场景数量）
+        let emotionalStage = '';
+        let stageColor = '';
+        if (completedCount >= 0 && completedCount <= 2) {
+          emotionalStage = '纯肉欲期';
+          stageColor = '#999';
+        } else if (completedCount >= 3 && completedCount <= 4) {
+          emotionalStage = '开始在乎';
+          stageColor = '#f0c864';
+        } else if (completedCount === 5) {
+          emotionalStage = '情感依赖';
+          stageColor = '#f08c50';
+        } else if (completedCount >= 6) {
+          emotionalStage = '深度羁绊';
+          stageColor = '#64b478';
+        }
+
+        html += `
+              <div style="margin-bottom: 24px; padding: 16px; background: rgba(255, 255, 255, 0.5); border: 1px solid var(--border); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h4 style="margin: 0; color: var(--ink); font-size: 16px;">💃 ${npcName}</h4>
+                  <span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${stageColor}22; color: ${stageColor};">
+                    ${emotionalStage}
+                  </span>
+                </div>
+
+                <div style="margin-bottom: 8px; font-size: 13px; color: var(--accent); font-weight: 600;">
+                  场景进度：${completedCount} / ${totalCount} 已完成
+                </div>
+
+                <div style="background: rgba(0,0,0,0.05); border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 12px;">
+                  <div style="height: 100%; background: linear-gradient(90deg, ${stageColor}, ${stageColor}dd); width: ${(completedCount / totalCount * 100).toFixed(1)}%; transition: width 0.3s;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+            `;
+
+        // 遍历场景（支持复杂对象结构和动态名称）
+        sceneKeys.forEach((sceneKey, index) => {
+          const scene = scenes[sceneKey];
+          let icon, bgColor, textColor, statusText;
+
+          if (typeof scene === 'object' && scene !== null) {
+            // 复杂对象结构
+            const status = scene.unlocked;
+            const sceneName = scene.name || `场景${index + 1}`;
+            const intensity = scene.intensity || '';
+
+            switch (status) {
+              case "active":
+                icon = '🔥';
+                bgColor = 'rgba(240, 200, 100, 0.15)';
+                textColor = '#c86400';
+                statusText = '进行中';
+                break;
+              case "completed":
+                icon = '✅';
+                bgColor = 'rgba(100, 180, 120, 0.15)';
+                textColor = '#2d8659';
+                statusText = '已完成';
+                break;
+              default: // locked
+                icon = '🔒';
+                bgColor = 'rgba(0, 0, 0, 0.05)';
+                textColor = 'rgba(90, 70, 53, 0.5)';
+                statusText = '未解锁';
+            }
+
+            html += `
+                  <div onclick="showSceneControl('${npcName}', '${sceneKey}')"
+                       style="padding: 8px 10px; background: ${bgColor}; border-radius: 4px; font-size: 12px; color: ${textColor}; text-align: center; border: 1px solid ${status === 'active' ? 'rgba(240, 200, 100, 0.3)' : 'transparent'}; cursor: pointer; transition: all 0.2s;"
+                       onmouseover="this.style.borderColor='${status === 'active' ? 'rgba(240, 200, 100, 0.5)' : 'rgba(90, 70, 53, 0.3)'}'; this.style.transform='translateY(-1px)'"
+                       onmouseout="this.style.borderColor='${status === 'active' ? 'rgba(240, 200, 100, 0.3)' : 'transparent'}'; this.style.transform='translateY(0px)'">
+                    <div style="font-weight: 600; margin-bottom: 2px;">${icon} ${sceneName}</div>
+                    <div style="font-size: 10px; opacity: 0.8;">${intensity} · ${statusText}</div>
+                    <div style="font-size: 9px; opacity: 0.6; margin-top: 2px;">点击控制</div>
+                  </div>
+                `;
+          } else {
+            // 兼容旧版布尔值结构
+            const isUnlocked = scenes[sceneKey] === true;
+            icon = isUnlocked ? '✅' : '🔒';
+            bgColor = isUnlocked ? 'rgba(100, 180, 120, 0.15)' : 'rgba(0, 0, 0, 0.05)';
+            textColor = isUnlocked ? '#2d8659' : 'rgba(90, 70, 53, 0.5)';
+
+            html += `
+                  <div style="padding: 8px 10px; background: ${bgColor}; border-radius: 4px; font-size: 12px; color: ${textColor}; text-align: center;">
+                    ${icon} 场景${index + 1}
+                  </div>
+                `;
+          }
+        });
+
+        html += `
+                </div>
+              </div>
+            `;
+      }
+
+      modalBody.innerHTML = html;
+      console.log('[NPC列表] 渲染完成');
+    } catch (e) {
+      console.error('[NPC列表] 加载失败:', e);
+      const modalBody = document.getElementById('yy-npc-modal-body');
+      if (modalBody) {
+        modalBody.innerHTML = `
+              <div style="text-align: center; padding: 40px; color: #c83232;">
+                <div style="font-size: 32px; margin-bottom: 16px;">❌</div>
+                <div>加载失败</div>
+                <div style="font-size: 13px; margin-top: 8px;">${e.message}</div>
+              </div>
+            `;
+      }
+    }
+  }
+
+  setTimeout( async function () {
+    var buttons = document.querySelectorAll('.yy-page-btn');
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        var pageNum = Number(this.dataset.page);
+        showPage(pageNum);
+      });
+    });
+
+    // 绑定封面初始化按钮事件
+    var initButton = document.getElementById('yy-initButton');
+    console.log('[初始化弹窗] 封面按钮元素:', initButton);
+    if (initButton) {
+      initButton.addEventListener('click', function () {
+        console.log('[初始化弹窗] 按钮被点击');
+        showInitModal();
+      });
+      console.log('[初始化弹窗] 事件监听器已绑定');
+    } else {
+      console.error('[初始化弹窗] 未找到封面按钮元素 #yy-initButton');
+    }
+
+    // 检查是否已初始化
+    const initialized = await checkInitialized();
+
+    if (initialized) {
+      // 已初始化，直接显示主内容
+      hideCover();
+      loadDiaryFromVariables();
+
+      // 检查病例状态
+      await checkMedicalRecord();
+
+      // 定期检查病例状态（每30秒）
+      setInterval(checkMedicalRecord, 30000);
+
+      // 监听聊天消息变化，实时检测病例获得
+      const chatContainer = document.querySelector('#chat');
+      if (chatContainer) {
+        const observer = new MutationObserver(function() {
+          setTimeout(checkMedicalRecord, 1000);
+        });
+        observer.observe(chatContainer, { childList: true, subtree: true });
+      }
+    } else {
+      // 未初始化，显示封面
+      console.log('[诊疗日记] 等待初始化');
+    }
+
+    // 绑定"探索病例"按钮点击事件（改为NPC生成功能）
+    const medicalRecordBtn = document.getElementById('yy-medicalRecordBtn');
+    if (medicalRecordBtn) {
+      medicalRecordBtn.addEventListener('click', showNPCGenerationModal);
+      console.log('[探索病例] 按钮事件已绑定 → NPC生成功能');
+    }
+
+    // 绑定NPC生成弹窗的按钮事件
+    const npcGenCancel = document.getElementById('yyNPCGenCancel');
+    if (npcGenCancel) {
+      npcGenCancel.addEventListener('click', hideNPCGenModal);
+    }
+
+    const npcGenConfirm = document.getElementById('yyNPCGenConfirm');
+    if (npcGenConfirm) {
+      npcGenConfirm.addEventListener('click', handleNPCGeneration);
+    }
+
+    // 点击遮罩层关闭NPC生成弹窗
+    const npcGenModal = document.getElementById('yyNPCGenModal');
+    if (npcGenModal) {
+      npcGenModal.addEventListener('click', function (e) {
+        if (e.target === npcGenModal) {
+          hideNPCGenModal();
+        }
+      });
+    }
+
+    // 绑定"角色列表"按钮点击事件
+    const npcListBtn = document.getElementById('yy-npcListBtn');
+    if (npcListBtn) {
+      npcListBtn.addEventListener('click', showNPCListModal);
+      console.log('[角色列表] 按钮事件已绑定');
+    }
+  },200);
+
+  // ============================================================
+  // 攻略进度面板功能
+  // ============================================================
+
+  var currentStrategyPage = 1; // 当前攻略页（跟随日记翻页）
+
+  // 切换攻略面板展开/收起
+  document.getElementById('yyStrategyToggle').addEventListener('click', function () {
+    var panel = document.getElementById('yyStrategyPanel');
+    var toggle = document.getElementById('yyStrategyToggle');
+
+    if (panel.classList.contains('yy-expanded')) {
+      panel.classList.remove('yy-expanded');
+      toggle.classList.remove('yy-expanded');
+    } else {
+      panel.classList.add('yy-expanded');
+      toggle.classList.add('yy-expanded');
+      // 展开时加载当前页的事件
+      loadCurrentClueEvents();
+    }
+  });
+
+  // 加载当前线索的事件
+  async function loadCurrentClueEvents() {
+    var clueNum = currentStrategyPage;
+    var container = document.getElementById('yyEventsContainer');
+    container.innerHTML = '<div class="yy-loading">正在加载...</div>';
+
+    try {
+      var result = await STscript('/xbgetvar 攻略.事件.线索' + clueNum, {
+        handleExecutionErrors: false,
+        handleParserErrors: false,
+      });
+
+      // ========== 调试日志开始 ==========
+      console.log('=== [攻略进度] 调试信息 ===');
+      console.log('当前线索编号:', clueNum);
+      console.log('原始返回值 (result):', result);
+      console.log('返回值类型:', typeof result);
+      console.log('返回值是否为null:', result === null);
+      console.log('返回值是否为undefined:', result === undefined);
+      if (result && typeof result === 'object') {
+        console.log('返回值的keys:', Object.keys(result));
+        console.log('是否有pipe字段:', 'pipe' in result);
+        if ('pipe' in result) {
+          console.log('pipe值:', result.pipe);
+          console.log('pipe类型:', typeof result.pipe);
+        }
+      }
+      console.log('========================');
+      // ========== 调试日志结束 ==========
+
+      var valueRaw = result || {};
+      var events = {};
+
+      // 解析变量值
+      if (typeof valueRaw === 'object' && valueRaw.pipe !== undefined) {
+        // 情况1：有pipe字段
+        var pipeValue = valueRaw.pipe;
+        console.log('[攻略进度] 使用pipe值, pipe类型:', typeof pipeValue);
+
+        if (typeof pipeValue === 'string' && pipeValue.trim()) {
+          try {
+            events = JSON.parse(pipeValue);
+            console.log('[攻略进度] pipe字符串解析成功, events:', events);
+          } catch (e) {
+            console.error('[攻略进度] pipe字符串解析失败:', e);
+          }
+        } else if (typeof pipeValue === 'object' && pipeValue !== null) {
+          events = pipeValue;
+          console.log('[攻略进度] pipe是对象，直接使用, events:', events);
+        }
+      } else if (typeof valueRaw === 'string' && valueRaw.trim()) {
+        // 情况2：字符串
+        console.log('[攻略进度] 使用字符串值, 长度:', valueRaw.length);
+        try {
+          events = JSON.parse(valueRaw);
+          console.log('[攻略进度] 字符串解析成功, events:', events);
+        } catch (e) {
+          console.error('[攻略进度] 字符串解析失败:', e);
+        }
+      } else if (typeof valueRaw === 'object' && valueRaw !== null && !valueRaw.pipe) {
+        // 情况3：直接返回的对象（没有pipe字段）
+        events = valueRaw;
+        console.log('[攻略进度] 直接使用返回的对象, events:', events);
+      } else {
+        console.log('[攻略进度] 未匹配到任何解析分支');
+      }
+
+      var eventCount = Object.keys(events).length;
+      console.log('[攻略进度] 事件数量:', eventCount);
+
+      // 判断阶段
+      var stage = '';
+      var stageClass = '';
+      if (eventCount <= 2) {
+        stage = '抗拒期';
+        stageClass = 'yy-stage-1';
+      } else if (eventCount <= 5) {
+        stage = '动摇期';
+        stageClass = 'yy-stage-2';
+      } else if (eventCount <= 10) {
+        stage = '突破期';
+        stageClass = 'yy-stage-3';
+      } else {
+        stage = '接受期';
+        stageClass = 'yy-stage-4';
+      }
+
+      // 更新阶段显示（按钮右侧）
+      var stageEl = document.getElementById('yyCurrentStage');
+      stageEl.textContent = stage;
+      stageEl.className = 'yy-current-stage ' + stageClass;
+
+      // 更新事件列表
+      if (eventCount === 0) {
+        container.innerHTML = '<div class="yy-loading">暂无事件记录</div>';
+      } else {
+        var html = '';
+        var keys = Object.keys(events);
+        keys.sort();
+
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i];
+          var value = events[key];
+          html += '<div class="yy-event-item">';
+          html += '<span class="yy-event-key">' + key + '</span>';
+          html += '<span>' + value + '</span>';
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+      }
+
+      console.log('[攻略进度] 线索' + clueNum + ' 加载完成:', eventCount + '个事件,', stage);
+    } catch (e) {
+      console.error('[攻略进度] 加载失败:', e);
+      container.innerHTML = '<div class="yy-loading" style="color: #c83232;">加载失败</div>';
+    }
+  }
+
+  // 初始加载当前页的攻略阶段（只更新阶段标签，不加载事件）
+  async function updateCurrentStage() {
+    var clueNum = currentStrategyPage;
+
+    try {
+      var result = await STscript('/xbgetvar 攻略.事件.线索' + clueNum, {
+        handleExecutionErrors: false,
+        handleParserErrors: false,
+      });
+
+      // ========== 调试日志开始 ==========
+      console.log('=== [更新阶段] 调试信息 ===');
+      console.log('当前线索编号:', clueNum);
+      console.log('原始返回值 (result):', result);
+      console.log('返回值类型:', typeof result);
+      if (result && typeof result === 'object') {
+        console.log('返回值的keys:', Object.keys(result));
+        console.log('是否有pipe字段:', 'pipe' in result);
+        if ('pipe' in result) {
+          console.log('pipe值:', result.pipe);
+          console.log('pipe类型:', typeof result.pipe);
+        }
+      }
+      console.log('========================');
+      // ========== 调试日志结束 ==========
+
+      var valueRaw = result || {};
+      var events = {};
+
+      // 解析变量值
+      if (typeof valueRaw === 'object' && valueRaw.pipe !== undefined) {
+        // 情况1：有pipe字段
+        var pipeValue = valueRaw.pipe;
+        console.log('[更新阶段] 使用pipe值, pipe类型:', typeof pipeValue);
+
+        if (typeof pipeValue === 'string' && pipeValue.trim()) {
+          try {
+            events = JSON.parse(pipeValue);
+            console.log('[更新阶段] pipe字符串解析成功, events:', events);
+          } catch (e) {
+            console.log('[更新阶段] pipe字符串解析失败:', e);
+          }
+        } else if (typeof pipeValue === 'object' && pipeValue !== null) {
+          events = pipeValue;
+          console.log('[更新阶段] pipe是对象，直接使用, events:', events);
+        }
+      } else if (typeof valueRaw === 'string' && valueRaw.trim()) {
+        // 情况2：字符串
+        console.log('[更新阶段] 使用字符串值, 长度:', valueRaw.length);
+        try {
+          events = JSON.parse(valueRaw);
+          console.log('[更新阶段] 字符串解析成功, events:', events);
+        } catch (e) {
+          console.log('[更新阶段] 字符串解析失败:', e);
+        }
+      } else if (typeof valueRaw === 'object' && valueRaw !== null && !valueRaw.pipe) {
+        // 情况3：直接返回的对象（没有pipe字段）
+        events = valueRaw;
+        console.log('[更新阶段] 直接使用返回的对象, events:', events);
+      } else {
+        console.log('[更新阶段] 未匹配到任何解析分支');
+      }
+
+      var eventCount = Object.keys(events).length;
+      console.log('[更新阶段] 事件数量:', eventCount);
+
+      var stage = '';
+      var stageClass = '';
+      if (eventCount <= 2) {
+        stage = '抗拒期';
+        stageClass = 'yy-stage-1';
+      } else if (eventCount <= 5) {
+        stage = '动摇期';
+        stageClass = 'yy-stage-2';
+      } else if (eventCount <= 10) {
+        stage = '突破期';
+        stageClass = 'yy-stage-3';
+      } else {
+        stage = '接受期';
+        stageClass = 'yy-stage-4';
+      }
+
+      var stageEl = document.getElementById('yyCurrentStage');
+      stageEl.textContent = stage;
+      stageEl.className = 'yy-current-stage ' + stageClass;
+    } catch (e) {
+      console.error('[攻略进度] 更新阶段失败:', e);
+    }
+  }
+
+  // 初始加载阶段
+  updateCurrentStage();
+
+  console.log('[攻略进度] 功能已初始化');
+
+  // ============================================================
+  // 美化初始化弹窗
+  // ============================================================
+
+  // 显示弹窗
+  function showInitModal() {
+    console.log('[初始化弹窗] showInitModal 被调用');
+    var modal = document.getElementById('yyInitModal');
+    console.log('[初始化弹窗] 弹窗元素:', modal);
+    if (modal) {
+      modal.classList.add('yy-show');
+      console.log('[初始化弹窗] 已添加 yy-show 类');
+    } else {
+      console.error('[初始化弹窗] 未找到弹窗元素 #yyInitModal');
+    }
+  }
+
+  // 隐藏弹窗
+  function hideInitModal() {
+    var modal = document.getElementById('yyInitModal');
+    modal.classList.remove('yy-show');
+  }
+
+  // 取消按钮
+  document.getElementById('yyInitCancel').addEventListener('click', function () {
+    hideInitModal();
+  });
+
+  // 确认初始化按钮
+  document.getElementById('yyInitConfirm').addEventListener('click', function () {
+    hideInitModal();
+    handleInitialize();
+  });
+
+  // 点击遮罩层关闭
+  document.getElementById('yyInitModal').addEventListener('click', function (e) {
+    if (e.target === this) {
+      hideInitModal();
+    }
+  });
+
+  console.log('[初始化弹窗] 功能已初始化');
+
+  // 场景控制弹窗函数
+  async function showSceneControl(npcName, sceneKey) {
+    try {
+      console.log(`[场景控制] 打开 ${npcName}.${sceneKey} 控制面板`);
+
+      // 获取场景完整数据
+      const result = await STscript(`/xbgetvar NPC攻略.NPC数据.${npcName}.${sceneKey}`);
+      let sceneData;
+      if (typeof result === 'object' && result !== null) {
+        if (result.pipe !== undefined) {
+          sceneData = typeof result.pipe === 'string' ? JSON.parse(result.pipe) : result.pipe;
+        } else {
+          sceneData = result;
+        }
+      } else if (typeof result === 'string') {
+        sceneData = JSON.parse(result);
+      }
+
+      // 状态图标和文本
+      const getStatusInfo = (status) => {
+        switch (status) {
+          case "active": return { icon: '🔥', text: '进行中' };
+          case "completed": return { icon: '✅', text: '已完成' };
+          default: return { icon: '🔒', text: '未解锁' };
+        }
+      };
+
+      const statusInfo = getStatusInfo(sceneData.unlocked);
+
+      // 创建弹窗
+      const modal = document.createElement('div');
+      modal.className = 'yy-modal yy-show';
+      modal.innerHTML = `
+          <div class="yy-modal-content" style="max-width: 400px;">
+            <div class="yy-modal-header">
+              <h3>${statusInfo.icon} ${sceneData.name}</h3>
+              <button onclick="this.closest('.yy-modal').remove()" style="background: none; border: none; font-size: 18px; cursor: pointer;">×</button>
+            </div>
+            <div class="yy-modal-body" style="line-height: 1.6;">
+              <div style="margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.05); border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 8px; color: var(--ink);">场景信息：</div>
+                <div style="font-size: 14px; color: var(--accent);">
+                  • 强度：${sceneData.intensity || '未知'}<br>
+                  • 状态：${statusInfo.text}
+                </div>
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 8px; color: var(--ink);">操作控制：</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <button onclick="resetScene('${npcName}', '${sceneKey}')"
+                          style="padding: 8px 12px; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    🔒 重置为未解锁
+                  </button>
+                  <button onclick="completeScene('${npcName}', '${sceneKey}')"
+                          style="padding: 8px 12px; background: #2d8659; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    ✅ 标记为完成
+                  </button>
+                  <button onclick="startScene('${npcName}', '${sceneKey}')"
+                          style="padding: 8px 12px; background: #c86400; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    🔥 场景开始
+                  </button>
+                  <button onclick="copySceneId('${sceneKey}')"
+                          style="padding: 8px 12px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    📋 复制场景ID
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="yy-modal-footer">
+              <button class="yy-modal-btn yy-btn-confirm" onclick="this.closest('.yy-modal').remove()">
+                关闭
+              </button>
+            </div>
+          </div>
+        `;
+
+      document.body.appendChild(modal);
+
+      // 点击遮罩关闭
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+
+    } catch (e) {
+      console.error('[场景控制] 弹窗打开失败:', e);
+      window.toastr && window.toastr.error('无法打开场景控制面板');
+    }
+  }
+
+  // 场景操作函数
+  async function resetScene(npcName, sceneKey) {
+    try {
+      console.log(`[场景控制] 重置场景: ${npcName}.${sceneKey}`);
+
+      // 获取当前数据
+      const result = await STscript(`/xbgetvar NPC攻略.NPC数据.${npcName}.${sceneKey}`);
+      let sceneData = typeof result === 'string' ? JSON.parse(result) : result;
+
+      // 重置为未解锁
+      sceneData.unlocked = "locked";
+
+      // 保存数据
+      await STscript(`/xbsetvar key=NPC攻略.NPC数据.${npcName}.${sceneKey} ${JSON.stringify(sceneData)}`);
+
+      // 关闭弹窗并刷新列表
+      document.querySelector('.yy-modal').remove();
+      showNPCList(); // 刷新NPC列表
+
+      window.toastr && window.toastr.success(`✅ ${sceneData.name} 已重置为未解锁`);
+    } catch (e) {
+      console.error('[场景控制] 重置失败:', e);
+      window.toastr && window.toastr.error('重置操作失败');
+    }
+  }
+
+  async function completeScene(npcName, sceneKey) {
+    try {
+      console.log(`[场景控制] 完成场景: ${npcName}.${sceneKey}`);
+
+      // 获取当前数据
+      const result = await STscript(`/xbgetvar NPC攻略.NPC数据.${npcName}.${sceneKey}`);
+      let sceneData = typeof result === 'string' ? JSON.parse(result) : result;
+
+      // 标记为完成
+      sceneData.unlocked = "completed";
+
+      // 保存数据
+      await STscript(`/xbsetvar key=NPC攻略.NPC数据.${npcName}.${sceneKey} ${JSON.stringify(sceneData)}`);
+
+      // 关闭弹窗并刷新列表
+      document.querySelector('.yy-modal').remove();
+      showNPCList(); // 刷新NPC列表
+
+      window.toastr && window.toastr.success(`✅ ${sceneData.name} 已标记为完成`);
+    } catch (e) {
+      console.error('[场景控制] 完成失败:', e);
+      window.toastr && window.toastr.error('完成操作失败');
+    }
+  }
+
+  async function startScene(npcName, sceneKey) {
+    try {
+      console.log(`[场景控制] 开始场景: ${npcName}.${sceneKey}`);
+
+      // 获取当前数据
+      const result = await STscript(`/xbgetvar NPC攻略.NPC数据.${npcName}.${sceneKey}`);
+      let sceneData = typeof result === 'string' ? JSON.parse(result) : result;
+
+      // 设置为进行中
+      sceneData.unlocked = "active";
+
+      // 保存数据
+      await STscript(`/xbsetvar key=NPC攻略.NPC数据.${npcName}.${sceneKey} ${JSON.stringify(sceneData)}`);
+
+      // 关闭弹窗并刷新列表
+      document.querySelector('.yy-modal').remove();
+      showNPCList(); // 刷新NPC列表
+
+      window.toastr && window.toastr.success(`🔥 ${sceneData.name} 已开始`);
+    } catch (e) {
+      console.error('[场景控制] 开始失败:', e);
+      window.toastr && window.toastr.error('开始操作失败');
+    }
+  }
+
+  async function copySceneId(sceneKey) {
+    try {
+      // 复制到剪贴板
+      await navigator.clipboard.writeText(sceneKey);
+      window.toastr && window.toastr.success(`📋 场景ID已复制: ${sceneKey}`);
+    } catch (e) {
+      console.error('[场景控制] 复制失败:', e);
+      window.toastr && window.toastr.error('复制失败');
+    }
+  }
+
+</script>
+</body>
+</html>
